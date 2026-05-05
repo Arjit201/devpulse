@@ -1,0 +1,17 @@
+#dependencies
+node_modules/
+#environmental variables
+devpulse-api/.env
+.env
+#build output
+dist/
+build/
+#prisma
+*.db
+*.db-journal
+#OS clutte
+.DS_Store
+Thumbs.db
+#IDE
+.vscode/
+.idea/
