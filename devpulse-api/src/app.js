@@ -6,6 +6,9 @@ import rateLimit from "express-rate-limit";
 import cors from "cors";
 import {errorHandler} from './middleware/errorHandler.js';
 import {AppError} from './utils/AppError.js';
+import {z} from 'zod';
+import {validate} from './middleware/validate.js';
+import authRouter from './modules/auth/auth.routes.js';
 const app = express();
 app.use(express.json());
 const port = process.env.PORT;
@@ -21,9 +24,18 @@ const limiter = rateLimit({
     message:{status:'error',message:'Too many requests, try again later'}
 });
 app.use(limiter);
+app.use('/api/v1/auth', authRouter);
 app.get("/health",(_req,res)=>{
     res.json({status:"ok",ts:new Date().toISOString()});
 });
+const testSchema = z.object({
+  email: z.string().email(),
+  age: z.number().int().min(18),
+})
+
+app.post('/test-validate', validate(testSchema), (req, res) => {
+  res.json({ valid: true, data: req.body })
+})
 app.use((_req,res)=>{
     res.status(404).json({status:"error",message:"Route not found"});
 })
