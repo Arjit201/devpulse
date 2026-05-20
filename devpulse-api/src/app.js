@@ -4,6 +4,8 @@ import morgan from "morgan";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cors from "cors";
+import {errorHandler} from './middleware/errorHandler.js';
+import {AppError} from './utils/AppError.js';
 const app = express();
 app.use(express.json());
 const port = process.env.PORT;
@@ -25,4 +27,5 @@ app.get("/health",(_req,res)=>{
 app.use((_req,res)=>{
     res.status(404).json({status:"error",message:"Route not found"});
 })
+app.use(errorHandler);
 export default app;
