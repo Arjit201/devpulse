@@ -9,8 +9,10 @@ import {AppError} from './utils/AppError.js';
 import {z} from 'zod';
 import {validate} from './middleware/validate.js';
 import authRouter from './modules/auth/auth.routes.js';
+import cookieParser from 'cookie-parser'
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 const port = process.env.PORT;
 app.use(helmet());//security http headers
 app.use(cors({
