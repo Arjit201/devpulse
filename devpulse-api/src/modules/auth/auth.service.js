@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import {prisma} from '../../config/db.js';
 import {AppError} from '../../utils/AppError.js';
 import jwt from 'jsonwebtoken'
+import {redis} from '../../config/redis.js';
 
 export function signAccessToken(userId) {
   return jwt.sign(
@@ -10,7 +11,6 @@ export function signAccessToken(userId) {
     { expiresIn: process.env.JWT_ACCESS_EXPIRES ?? '15m' }
   )
 }
-
 export function signRefreshToken(userId) {
   return jwt.sign(
     { sub: userId },
@@ -41,4 +41,24 @@ export async function registerUser({name,email,password,role}){
     const accessToken = signAccessToken(user.id);
     const refreshToken = signRefreshToken(user.id);
     return {user, accessToken, refreshToken}; 
+}
+const BLACKLIST = 'blacklist:refresh:';
+export async function refreshTokens(token){
+  const blacklist = await redis.get(`${BLACKLIST}${token}`);
+  if(blacklist) throw AppError.unauthorized('Refresh token revoked');
+  let payload;
+  try{
+    payload = jwt.verify(token,process.env.JWT_REFRESH_SECRET);
+  }  
+  catch{
+    throw AppError.unauthorized('Refresh token invalid or expired');
+  }
+  await redis.set(`${BLACKLIST}${token}`,'1','EX',60*60*24*7);
+  const accessToken = signAccessToken(payload.sub);
+  const refreshToken = signRefreshToken(payload.sub);
+  return {accessToken,refreshToken};
+}
+export async function logoutUser(token){
+  if(!token)return;
+  await redis.set(`${BLACKLIST}${token}`,'1','EX',60*60*24*7);
 }

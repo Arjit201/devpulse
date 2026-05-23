@@ -1,5 +1,6 @@
 import { asyncHandler } from '../../utils/helpers.js'
-import { registerUser , loginUser } from './auth.service.js'
+import { registerUser , loginUser , refreshTokens, logoutUser } from './auth.service.js'
+import {AppError} from '../../utils/AppError.js';
 
 const COOKIE_OPTS = {
   httpOnly:true,
@@ -18,3 +19,17 @@ export const register = asyncHandler(async (req, res) => {
   res.cookie('refreshToken',refreshToken,COOKIE_OPTS);
   res.status(201).json({ user,accessToken })
 });
+
+export const refresh = asyncHandler(async(req,res)=>{
+  const token = req.cookies?.refreshToken;
+  if(!token) throw AppError.unauthorized('No refresh token');
+  const {accessToken,refreshToken} = await refreshTokens(token);
+  res.cookie('refreshToken',refreshToken,COOKIE_OPTS);
+  res.json({accessToken});
+})
+export const logout = asyncHandler(async(req,res)=>{
+  const token = req.cookies?.refreshToken;
+  await logoutUser(token);
+  res.clearCookie('refreshToken');
+  res.json({message:'Logged out'});
+})
