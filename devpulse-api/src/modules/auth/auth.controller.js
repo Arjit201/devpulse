@@ -1,6 +1,8 @@
 import { asyncHandler } from '../../utils/helpers.js'
 import { registerUser , loginUser , refreshTokens, logoutUser } from './auth.service.js'
 import {AppError} from '../../utils/AppError.js';
+import {prisma} from '../../config/db.js';
+import { authenticate } from '../../middleware/authenticate.js';
 
 const COOKIE_OPTS = {
   httpOnly:true,
@@ -32,4 +34,11 @@ export const logout = asyncHandler(async(req,res)=>{
   await logoutUser(token);
   res.clearCookie('refreshToken');
   res.json({message:'Logged out'});
+})
+export const me = asyncHandler(async(req,res)=>{
+  const user = await prisma.user.findUnique({
+    where:{id:req.user.id},
+    select:{id:true,email:true,name:true,role:true,createdAt:true,recruiterProfile:{include:{company:true}},candidateProfile:true},
+  });
+  res.json({user});
 })
