@@ -28,3 +28,10 @@ export const authenticate = asyncHandler(async(req,res,next)=>{
     req.user = user;
     next();
 })
+export const requireRole = (...roles)=>asyncHandler(async(req,_res,next)=>{
+    if(!roles.includes(req.user.role))throw AppError.forbidden();
+    next();
+});
+export const requireRecruiter = requireRole('recruiter','company_admin');
+export const requireCandidate = requireRole('candidate');
+export const requireAdmin = requireRole('company_admin');
