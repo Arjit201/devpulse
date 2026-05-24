@@ -105,8 +105,8 @@ model JobPosting{
   companyId String @map("company_id")
   postedById String @map("posted_by")
   title String
-  Description String
-  Location String?
+  description String
+  location String?
   status JobStatus @default(open)
   type JobType @default(full_time)
   salaryMin Int? @map("min_salary")
