@@ -35,3 +35,18 @@ export const requireRole = (...roles)=>asyncHandler(async(req,_res,next)=>{
 export const requireRecruiter = requireRole('recruiter','company_admin');
 export const requireCandidate = requireRole('candidate');
 export const requireAdmin = requireRole('company_admin');
+export const requireJobOwnership = asyncHandler(async(req,_res,next)=>{
+    const jobId = req.params.jobId ?? req.params.id
+    if(!jobId) {return next()}
+    const job = await prisma.jobPosting.findUnique({
+        where: {id : jobId},
+        select:{companyId:true},
+    })
+    if(!job){throw AppError.notFound('Job')}
+    const companyId = req.user.recruiterProfile?.companyId
+    if(job.companyId !== companyId){
+        throw AppError.forbidden('You do not own this Job posting')
+    }
+    req.job = job;
+    next();
+})
