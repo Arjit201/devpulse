@@ -68,3 +68,18 @@ export async function advanceStage(applicationId,{stage:toStage,note},recruiterI
     return updatedApp
 
 }
+export async function getTimeline(applicationId){
+    const transitions = await prisma.stageTransition.findMany({
+        where:{applicationId},
+        include:{
+            changedBy:{
+                select:{name:true,email:true},
+            },
+        },
+        orderBy:{createdAt:'asc'},
+    })
+    return transitions.map(({changedBy,...t})=>({
+        ...t,
+        changedByName: changedBy.name ?? changedBy.email,
+    }))
+}
