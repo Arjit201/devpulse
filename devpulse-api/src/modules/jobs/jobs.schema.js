@@ -12,3 +12,10 @@ export const createJobSchema = z.object({
 export const updateJobSchema = createJobSchema.partial().extend({
     status: z.enum(['closed','open','draft']).optional(),
 })
+export const listJobsQuerySchema = z.object({
+    search: z.string().optional(),
+    type: z.enum(['full_time','part_time','internship','contract']).optional(),
+    location: z.string().optional(),
+    cursor: z.string().uuid().optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+})
