@@ -83,3 +83,39 @@ export async function getTimeline(applicationId){
         changedByName: changedBy.name ?? changedBy.email,
     }))
 }
+export async function getMyApplications(userId){
+    const profile = await prisma.candidateProfile.findUnique({
+        where:{userId}
+    })
+    if(!profile)return []
+    const applications = await prisma.application.findMany({
+        where:{candidateId:profile.id},
+        include:{
+            job:{
+                include:{
+                    company:{select:{name:true,slug:true}},
+                },
+            },
+        },
+        orderBy:{appliedAt:'desc'}
+    })
+    return applications
+}
+export async function getApplicationById(applicationId,requestingUser){
+    const app = await prisma.application.findUnique({
+        where:{id:applicationId},
+        include:{
+            job:{include:{company:true}},
+            candidate:{
+                include:{
+                    user:{select:{name:true,email:true}},
+                },
+            },
+        },
+    })
+    if(!app) throw AppError.notFound('Application')
+    const isOwnerCandidate = requestingUser.role === 'candidate' && requestingUser.id === app.candidate.userId
+    const isOwnerRecruiter = ['recruiter','company_admin'].includes(requestingUser.role) && requestingUser.recruiterProfile?.companyId === app.job.companyId
+    if(!isOwnerCandidate && !isOwnerRecruiter) throw AppError.forbidden()
+    return app
+}
