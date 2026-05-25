@@ -25,3 +25,46 @@ export async function applyToJob({jobId,coverLetter},userId){
     })
     return application
 }
+export async function advanceStage(applicationId,{stage:toStage,note},recruiterId){
+    const app = await prisma.application.findUnique({
+        where:{id:applicationId},
+        include:{
+            job:{
+                select:{companyId:true,title:true,postedById:true},
+            },
+            candidate:{
+                include:{
+                    user:{
+                        select:{email:true,name:true},
+                    },
+                },
+            },
+        },
+    })
+    if(!app){throw AppError.notFound('Application')}
+    const recruiter = await prisma.user.findUnique({
+        where:{id:recruiterId},
+        select:{recruiterProfile:{select:{companyId:true}}}
+    })
+    if(app.job.companyId !== recruiter?.recruiterProfile?.companyId){throw AppError.forbidden()}
+    if(!isValidTransition(app.stage,toStage)){
+        throw AppError.unprocessable(`Cannot transition from ${app.stage} to ${toStage}`,'INVALID_TRANSITION')
+    }
+    const updatedApp = await prisma.$transaction([
+        prisma.application.update({
+            where:{id:applicationId},
+            data:{stage:toStage},
+        }),
+        prisma.stageTransition.create({
+            data:{
+                applicationId,
+                changedById:recruiterId,
+                fromStage:app.stage,
+                toStage,
+                note,
+            }
+        })
+    ])
+    return updatedApp
+
+}
