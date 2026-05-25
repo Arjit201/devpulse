@@ -68,3 +68,52 @@ export async function deleteJob(id){
     })
     await cacheDelPattern('jobs:list:*')
 }
+export async function getJobApplications(jobId){
+    const applications = await prisma.jobPostings.findMany({
+        where:{jobId},
+        include:{
+            candidate:{
+                include:{
+                    user:{select:{id:true,name:true,email:true}},
+                },
+            },
+        },
+        orderBy:{appliedAt:'desc'},
+    })
+    return applications.map(({candidate,...app})=>({
+        ...app,
+        candidate:{
+            id : candidate.id,
+            name : candidate.user.name,
+            email:candidate.user.email,
+            headline:candidate.headline,
+            skills:candidate.skills,
+        },
+    }))
+}
+export async function getJobAnalytics(jobId){
+    const stageCounts = await prisma.application.groupBy({
+        by: ['stage'],
+        where: { jobId },
+        _count: { stage: true },
+    })
+
+    const avgTimeRaw = await prisma.$queryRaw`
+        SELECT AVG(
+        EXTRACT(EPOCH FROM (st.created_at - a.applied_at)) / 3600
+        ) AS avg_hours
+        FROM stage_transitions st
+        JOIN applications a ON a.id = st.application_id
+        WHERE a.job_id = ${jobId}
+        AND st.from_stage = 'applied'
+        AND st.to_stage   = 'screening'
+    `
+
+    return {
+        stageCounts: stageCounts.map((s) => ({
+        stage: s.stage,
+        count: s._count.stage,
+        })),
+        avgHoursToFirstScreen: Number(avgTimeRaw[0]?.avg_hours ?? 0).toFixed(1),
+    }
+}

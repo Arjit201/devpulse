@@ -1,4 +1,4 @@
-import { createJob,listJobs,getJob,updateJob,deleteJob} from "./jobs.service.js";
+import { createJob,listJobs,getJob,updateJob,deleteJob,getJobAnalytics,getJobApplications} from "./jobs.service.js";
 import { asyncHandler } from "../../utils/helpers.js";
 import { validateQuery } from "../../middleware/validate.js";
 export const createJobHandler = asyncHandler(async (req,res)=>{
@@ -21,4 +21,12 @@ export const updateJobHandler = asyncHandler(async(req,res)=>{
 export const deleteJobHandler = asyncHandler(async(req,res)=>{
     await deleteJob(req.params.id)
     res.json({message:'Job closed successfully'})
+})
+export const getJobAnalyticsHandler = asyncHandler(async(req,res)=>{
+    const analytics = await getJobAnalytics(req.params.jobId)
+    res.json(analytics)
+})
+export const getJobApplicationsHandler = asyncHandler(async(req,res)=>{
+    const applications = await getJobApplications(req.params.jobId)
+    res.json({applications})
 })
