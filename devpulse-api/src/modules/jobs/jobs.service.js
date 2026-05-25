@@ -1,7 +1,7 @@
 import { prisma } from '../../config/db.js';
 import { createJobSchema } from './jobs.schema.js';
 import { AppError } from '../../utils/AppError.js';
-import { cacheGet,cacheSet } from '../../config/redis.js';
+import { cacheDelPattern, cacheGet,cacheSet } from '../../config/redis.js';
 import { paginate } from '../../utils/helpers.js';
 const JOB_INCLUDE={
     company:{select:{id:true,name:true,slug:true}},
@@ -49,5 +49,22 @@ export async function createJob(data,userId,companyId){
         data : {...data,companyId,postedById:userId},
         include : JOB_INCLUDE,
     })
+    await cacheDelPattern('jobs:list:*')
     return job   
+}
+export async function updateJob(id,data){
+    const job = await prisma.jobPosting.update({
+        where:{id},
+        data,
+        include:JOB_INCLUDE,
+    })
+    await cacheDelPattern('jobs:list:*')
+    return job
+}
+export async function deleteJob(id){
+    await prisma.jobPosting.update({
+        where:{id},
+        data:{status:'closed'},
+    })
+    await cacheDelPattern('jobs:list:*')
 }
