@@ -12,6 +12,7 @@ import authRouter from './modules/auth/auth.routes.js';
 import cookieParser from 'cookie-parser'
 import jobsRouter from './modules/jobs/jobs.routes.js'
 import applicationsRouter from './modules/applications/applications.routes.js'
+import notificationsRouter from './modules/notifications/notifications.routes.js'
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
@@ -42,6 +43,7 @@ app.post('/test-validate', validate(testSchema), (req, res) => {
 })
 app.use('/api/v1/jobs',jobsRouter)
 app.use('/api/v1/applications',applicationsRouter)
+app.use('/api/v1/notifications',notificationsRouter)
 app.use((_req,res)=>{
     res.status(404).json({status:"error",message:"Route not found"});
 })
