@@ -3,6 +3,7 @@ node_modules/
 #environmental variables
 devpulse-api/.env
 .env
+commands.txt
 #build output
 dist/
 build/

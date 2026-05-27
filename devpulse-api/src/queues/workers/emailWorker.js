@@ -32,7 +32,7 @@ async function sendEmail({to,subject,body}){
     }
 }
 const handlers = {
-    async stage_change({to,candidateName,jobTitle,newState}){
+    async stage_change({to,candidateName,jobTitle,newStage,applicationId}){
         const label = STAGE_LABELS[newStage] ?? newStage
         await sendEmail({
             to,

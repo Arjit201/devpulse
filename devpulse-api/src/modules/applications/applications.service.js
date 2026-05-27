@@ -1,14 +1,20 @@
 import {isValidTransition} from '../../config/stageTransitions.js'
 import {prisma} from '../../config/db.js'
 import {AppError} from '../../utils/AppError.js'
-export async function applyToJob({jobId,coverLetter},userId){
+import { queueStageChangeEmail, newApplicationEmail } from '../../queues/emailQueue.js'
+import { createNotification } from '../../utils/notifications.js'
+export async function applyToJob({jobId,coverLetter},user){
     const profile = await prisma.candidateProfile.findUnique({
-        where:{userId}
+        where:{userId: user.id}
     })
     if(!profile) {throw AppError.notFound('Candidate Profile')}
     const job = await prisma.jobPosting.findUnique({
         where:{id:jobId},
-        select:{id:true,status:true,title:true},
+        include:{
+            postedBy:{
+                select:{email:true,name:true},
+            }
+        }
     })
     if(!job){throw AppError.notFound('Job')}
     if(job.status!=='open'){throw AppError.badRequest('This job is not accepting applications')}
@@ -22,6 +28,13 @@ export async function applyToJob({jobId,coverLetter},userId){
         include:{
             job:{include:{company:true}},
         }
+    })
+    await newApplicationEmail({
+        to:            job.postedBy.email,
+        recruiterName: job.postedBy.name ?? 'there',
+        candidateName: user.name ?? user.email,
+        jobTitle:      job.title,
+        applicationId: application.id,
     })
     return application
 }
@@ -65,6 +78,22 @@ export async function advanceStage(applicationId,{stage:toStage,note},recruiterI
             }
         })
     ])
+    await queueStageChangeEmail({
+        to: app.candidate.user.email,
+        candidateName : app.candidate.user.name,
+        jobTitle: app.job.title,
+        toStage,
+        applicationId
+    })
+    await createNotification({
+        userId:  app.candidate.userId,
+        type:    'stage_change',
+        payload: {
+            jobTitle:      app.job.title,
+            newStage:      toStage,
+            applicationId,
+        },
+    })
     return updatedApp
 
 }

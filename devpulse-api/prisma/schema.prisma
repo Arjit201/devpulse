@@ -24,7 +24,7 @@ enum JobStatus{
 enum ApplicationStage{
   applied
   screening
-  interveiew
+  interview
   offer
   hired
   rejected

@@ -1,7 +1,7 @@
 import { asyncHandler} from "../../utils/helpers.js";
 import { applyToJob,advanceStage,getTimeline,getApplicationById,getMyApplications } from "./applications.service.js";
 export const applyHandler = asyncHandler(async(req,res)=>{
-    const application = await applyToJob(req.body,req.user.id)
+    const application = await applyToJob(req.body,req.user)
     res.status(201).json({application})
 })
 export const advanceStageHandler = asyncHandler(async(req,res)=>{
